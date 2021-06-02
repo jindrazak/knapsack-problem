@@ -10,57 +10,21 @@ func (solver *BruteforceBagSolver) Reset() {
 	solver.VisitedConfigurations = 0
 }
 
-//
-//func (solver *BruteforceBagSolver) getSolution(problemInstance model.ProblemInstance) model.FinalConfiguration {
-//	var bestConfiguration model.FinalConfiguration;
-//	bestPrice := 0;
-//
-//
-//	configuration := model.MakePartialConfiguration(len(problemInstance.Items))
-//
-//	for  {
-//		totalWeight := problemInstance.CalculateTotalWeight(configuration);
-//		totalPrice := problemInstance.CalculateTotalPrice(configuration);
-//		if totalWeight <= problemInstance.Bag.Capacity && totalPrice > bestPrice {
-//			bestConfiguration = configuration.clone();
-//			bestPrice = totalPrice;
-//		}
-//		if getNextConfiguration(configuration) {break;}
-//	}
-//
-//
-//        return bestConfiguration;
-//    }
-//
-//    func getNextConfiguration(configuration model.PartialConfiguration) bool {
-//        for i := 0; i < len(configuration.Flags); i++ {
-//            if configuration.Flags[i] {
-//                configuration.Flags[i] = false;
-//            }else{
-//                configuration.Flags[i] = true;
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-
 func (solver *BruteforceBagSolver) GetSolution(problemInstance model.ProblemInstance) *model.FinalConfiguration {
 	configuration := model.MakePartialConfiguration(len(problemInstance.Items))
 	return solver.getSolutionRec(problemInstance, configuration)
 }
 
-//todo pass all by reference
 func (solver *BruteforceBagSolver) getSolutionRec(problemInstance model.ProblemInstance, configuration model.PartialConfiguration) *model.FinalConfiguration {
 	if configuration.MaskIndex == len(configuration.Flags) { //All booleans are set.
 		solver.VisitedConfigurations++
 		totalWeight := problemInstance.CalculateTotalWeight(configuration.Flags)
 		totalPrice := problemInstance.CalculateTotalPrice(configuration.Flags)
-		if totalWeight <= problemInstance.Bag.Capacity &&
-			totalPrice >= problemInstance.MinimumPrice {
-			finalConfiguration := make([]bool, len(configuration.Flags))
-			copy(finalConfiguration, configuration.Flags)
-			return (*model.FinalConfiguration)(&finalConfiguration)
+		fitsInBag := totalWeight <= problemInstance.Bag.Capacity
+		fulfilsMinimumPrice := totalPrice >= problemInstance.MinimumPrice
+		if fitsInBag && fulfilsMinimumPrice {
+			var configurationCopy = configuration.Flags.Clone()
+			return &configurationCopy
 		} else {
 			return nil
 		}
