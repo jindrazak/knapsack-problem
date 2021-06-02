@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/jindrazak/knapsack-problem/algorithm"
+	"github.com/jindrazak/knapsack-problem/model"
 	"github.com/jindrazak/knapsack-problem/util"
 	"reflect"
 	"strconv"
@@ -12,66 +13,61 @@ import (
 func main() {
 	n := "20"
 	setId := "N"
-	bruteforceSolver := algorithm.BruteforceBagSolver{}
-	solveSet(setId, n, &bruteforceSolver)
-	// solveSet(setId, n, BranchBoundBagSolver());
-	setId = "Z"
-	//solveSet(setId, n, &bruteforceSolver)
-	// solveSet(setId, n, new BranchBoundBagSolver());
-
+	solveSet(setId, n, algorithm.CalculateBruteforceSolution)
 }
 
-func solveSet(directory string, n string, solver *algorithm.BruteforceBagSolver) {
+func solveSet(directory string, n string, algorithm func(model.ProblemInstance) *model.FinalConfiguration) {
 	instanceLoader := initializeInstanceLoader(directory, n)
 	solutionLoader := initializeSolutionLoader(directory, n)
 
-	println("Starting to solve set " + directory + "/" + n + " using " + reflect.TypeOf(solver).Name())
+	println("Starting to solve set " + directory + "/" + n)
 
-	var times []int64
+	var durations []int64
 	for instanceLoader.Next() && solutionLoader.Next() {
 		problemInstance := instanceLoader.Current()
 		solution := solutionLoader.Current()
 
-		solver.Reset()
-
 		start := time.Now()
-		calculatedSolution := solver.GetSolution(problemInstance)
+		calculatedSolution := algorithm(problemInstance)
 		timeElapsed := time.Since(start)
-		times = append(times, timeElapsed.Nanoseconds())
+		durations = append(durations, timeElapsed.Nanoseconds())
 		hasSolution := solution.IsSolvable(problemInstance)
 		foundSolution := calculatedSolution != nil
 
 		if hasSolution && foundSolution {
 			if !reflect.DeepEqual(solution.Configuration, *calculatedSolution) {
-				println("Error. Solution does not match calculatedSolution.")
 				fmt.Printf("Expected: %v\n", solution.Configuration)
 				fmt.Printf("Got: %v\n", *calculatedSolution)
+				panic("Error. Solution does not match calculatedSolution.")
 			}
 		} else if !hasSolution && foundSolution {
-			println("Error. Found invalid solution.")
+			panic("Error. Found invalid solution.")
 		} else if hasSolution && !foundSolution {
-			println("Error. Not found existing solution.")
+			panic("Error. Not found existing solution.")
 		}
 
 		var resultString string
 		if calculatedSolution != nil {
-			resultString = "solvable"
+			resultString = "SOLVABLE"
 		} else {
-			resultString = "not solvable"
+			resultString = "NOT SOLVABLE"
 		}
 		generalInfo := "Instance '" + strconv.Itoa(problemInstance.Id) + "' solved. "
 		resultInfo := "Result: " + resultString + ". "
-		visitedStatesInfo := "Visited States: " + strconv.Itoa(solver.VisitedConfigurations) + ". "
 		elapsedTimeInfo := "Elapsed time: " + strconv.FormatInt(timeElapsed.Nanoseconds(), 10) + " ns"
-		println(generalInfo + resultInfo + visitedStatesInfo + elapsedTimeInfo)
+		println(generalInfo + resultInfo + elapsedTimeInfo)
 	}
+
+	println("Average duration:" + strconv.FormatInt(average(durations), 10))
+	println("Set '" + directory + "/" + n + "' completed")
+}
+
+func average(series []int64) int64 {
 	var total int64
-	for _, nanoseconds := range times {
+	for _, nanoseconds := range series {
 		total += nanoseconds
 	}
-	average := total / int64(len(times))
-	println("Average duration:" + strconv.FormatInt(average, 10))
-	println("Set '" + directory + "/" + n + "' completed using '" + reflect.TypeOf(*solver).String())
+	return total / int64(len(series))
 }
 
 func initializeInstanceLoader(setId string, n string) util.InstanceLoader {
