@@ -12,7 +12,10 @@ func (solver *BruteforceBagSolver) Reset() {
 
 func (solver *BruteforceBagSolver) GetSolution(problemInstance model.ProblemInstance) *model.FinalConfiguration {
 	configuration := model.MakePartialConfiguration(len(problemInstance.Items))
-	return solver.getSolutionRec(problemInstance, configuration)
+	resultChannel := make(chan *model.FinalConfiguration)
+	go solver.goGetSolutionRec(problemInstance, configuration, resultChannel)
+	result := <-resultChannel
+	return result
 }
 
 func (solver *BruteforceBagSolver) getSolutionRec(problemInstance model.ProblemInstance, configuration model.PartialConfiguration) *model.FinalConfiguration {
@@ -39,6 +42,52 @@ func (solver *BruteforceBagSolver) getSolutionRec(problemInstance model.ProblemI
 		configuration.SetNextFlag(true)
 		rightSolution := solver.getSolutionRec(problemInstance, configuration)
 		return pickBetterConfiguration(leftSolution, rightSolution, problemInstance)
+	}
+
+}
+
+func (solver *BruteforceBagSolver) goGetSolutionRec(problemInstance model.ProblemInstance, configuration model.PartialConfiguration, resultChannel chan *model.FinalConfiguration) {
+	if configuration.MaskIndex == len(configuration.Flags) { //All booleans are set.
+		solver.VisitedConfigurations++
+		totalWeight := problemInstance.CalculateTotalWeight(configuration.Flags)
+		totalPrice := problemInstance.CalculateTotalPrice(configuration.Flags)
+		fitsInBag := totalWeight <= problemInstance.Bag.Capacity
+		fulfilsMinimumPrice := totalPrice >= problemInstance.MinimumPrice
+		if fitsInBag && fulfilsMinimumPrice {
+			var configurationCopy = configuration.Flags.Clone()
+			resultChannel <- &configurationCopy
+		} else {
+			resultChannel <- nil
+		}
+	} else {
+		if configuration.MaskIndex > 6 {
+			resultChannel <- solver.getSolutionRec(problemInstance, configuration)
+			return
+		}
+		leftChannel := make(chan *model.FinalConfiguration)
+		rightChannel := make(chan *model.FinalConfiguration)
+		//continue with recursion, set currently changed boolean to false
+		originalMask := configuration.MaskIndex
+		configuration.SetNextFlag(false)
+
+		go solver.goGetSolutionRec(problemInstance, configuration, leftChannel)
+		rightConfiguration := configuration.Clone()
+		rightConfiguration.MaskIndex = originalMask
+
+		//continue with recursion, set currently changed boolean to true
+		rightConfiguration.SetNextFlag(true)
+		go solver.goGetSolutionRec(problemInstance, rightConfiguration, rightChannel)
+		var leftSolution, rightSolution *model.FinalConfiguration
+		//leftSolution = <-leftChannel
+		//rightSolution = <-rightChannel
+		for i := 0; i < 2; i++ {
+			select {
+			case leftSolution = <-leftChannel:
+			case rightSolution = <-rightChannel:
+			}
+		}
+
+		resultChannel <- pickBetterConfiguration(leftSolution, rightSolution, problemInstance)
 	}
 
 }

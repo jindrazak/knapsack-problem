@@ -17,6 +17,11 @@ func (configuration FinalConfiguration) Clone() FinalConfiguration {
 	return copiedConfiguration
 }
 
+func (configuration PartialConfiguration) Clone() PartialConfiguration {
+	copiedFlags := configuration.Flags.Clone()
+	return PartialConfiguration{Flags: copiedFlags, MaskIndex: configuration.MaskIndex}
+}
+
 func (configuration *PartialConfiguration) SetNextFlag(newFlag bool) {
 	configuration.Flags[configuration.MaskIndex] = newFlag
 	configuration.MaskIndex++
