@@ -47,3 +47,22 @@ func (problemInstance ProblemInstance) IsValidConfiguration(configuration FinalC
 	fulfilsMinimumPrice := totalPrice >= problemInstance.MinimumPrice
 	return fitsInBag && fulfilsMinimumPrice
 }
+
+func (problemInstance ProblemInstance) PickBetterConfiguration(a, b *FinalConfiguration) *FinalConfiguration {
+	if a != nil && b != nil {
+		aPrice := problemInstance.CalculateTotalPrice(*a)
+		bPrice := problemInstance.CalculateTotalPrice(*b)
+		if aPrice < bPrice {
+			return b
+		} else {
+			return a
+		}
+
+	} else if a != nil && b == nil {
+		return a
+	} else if a == nil && b != nil {
+		return b
+	} else {
+		return nil
+	}
+}
