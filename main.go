@@ -27,7 +27,7 @@ func solveSet(directory string, n string, algorithm algorithm.BagSolver) {
 		solution := solutionLoader.Current()
 
 		start := time.Now()
-		calculatedSolution := algorithm.CalculateSolution(problemInstance)
+		calculatedSolution, visitedConfigurations := algorithm.CalculateSolution(problemInstance)
 		timeElapsed := time.Since(start)
 		durations = append(durations, timeElapsed.Nanoseconds())
 		hasSolution := solution.IsSolvable(problemInstance)
@@ -53,8 +53,10 @@ func solveSet(directory string, n string, algorithm algorithm.BagSolver) {
 		}
 		generalInfo := "Instance '" + strconv.Itoa(problemInstance.Id) + "' solved. "
 		resultInfo := "Result: " + resultString + ". "
-		elapsedTimeInfo := "Elapsed time: " + strconv.FormatInt(timeElapsed.Nanoseconds(), 10) + " ns"
-		println(generalInfo + resultInfo + elapsedTimeInfo)
+		elapsedTimeInfo := "Elapsed time: " + strconv.FormatInt(timeElapsed.Nanoseconds(), 10) + " ns "
+		visitedConfigurationsInfo := "Visited configurations: " + strconv.Itoa(visitedConfigurations)
+
+		println(generalInfo + resultInfo + elapsedTimeInfo + visitedConfigurationsInfo)
 	}
 
 	println("Average duration:" + strconv.FormatInt(average(durations), 10))
