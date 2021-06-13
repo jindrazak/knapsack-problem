@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/jindrazak/knapsack-problem/algorithm"
-	"github.com/jindrazak/knapsack-problem/model"
 	"github.com/jindrazak/knapsack-problem/util"
 	"reflect"
 	"strconv"
@@ -13,10 +12,10 @@ import (
 func main() {
 	n := "20"
 	setId := "N"
-	solveSet(setId, n, algorithm.CalculateBruteforceSolution)
+	solveSet(setId, n, algorithm.BruteforceBagSolver{})
 }
 
-func solveSet(directory string, n string, algorithm func(model.ProblemInstance) *model.FinalConfiguration) {
+func solveSet(directory string, n string, algorithm algorithm.BagSolver) {
 	instanceLoader := initializeInstanceLoader(directory, n)
 	solutionLoader := initializeSolutionLoader(directory, n)
 
@@ -28,7 +27,7 @@ func solveSet(directory string, n string, algorithm func(model.ProblemInstance) 
 		solution := solutionLoader.Current()
 
 		start := time.Now()
-		calculatedSolution := algorithm(problemInstance)
+		calculatedSolution := algorithm.CalculateSolution(problemInstance)
 		timeElapsed := time.Since(start)
 		durations = append(durations, timeElapsed.Nanoseconds())
 		hasSolution := solution.IsSolvable(problemInstance)

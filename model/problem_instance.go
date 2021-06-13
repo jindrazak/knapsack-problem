@@ -39,3 +39,11 @@ func (problemInstance ProblemInstance) CalculateMaxPossiblePrice(configuration P
 	}
 	return totalPrice
 }
+
+func (problemInstance ProblemInstance) IsValidConfiguration(configuration FinalConfiguration) bool {
+	totalWeight := problemInstance.CalculateTotalWeight(configuration)
+	totalPrice := problemInstance.CalculateTotalPrice(configuration)
+	fitsInBag := totalWeight <= problemInstance.Bag.Capacity
+	fulfilsMinimumPrice := totalPrice >= problemInstance.MinimumPrice
+	return fitsInBag && fulfilsMinimumPrice
+}
